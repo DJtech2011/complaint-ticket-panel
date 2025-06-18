@@ -2,95 +2,60 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard</title>
+  <title>Dashboard - Complaint Panel</title>
   <style>
-    body { font-family: sans-serif; margin: 0; background: #f4f6f8; }
-    .navbar { background: #333; color: white; padding: 10px 20px; display: flex; justify-content: space-between; }
-    .container { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; }
-    input, textarea, button { width: 100%; padding: 10px; margin: 10px 0; }
-    button { background: #007bff; color: white; border: none; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    .ticket { border-bottom: 1px solid #ddd; padding: 10px 0; }
-    .ticket:last-child { border-bottom: none; }
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+    textarea, input, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #28a745; color: white; font-weight: bold; border: none; }
+    button:hover { background: #218838; cursor: pointer; }
+    .ticket { background: #fafafa; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 6px; }
+    .logout { background: #dc3545; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <div>Complaint Dashboard</div>
-    <button onclick="logout()">Logout</button>
-  </div>
-
   <div class="container">
-    <h2>Create a New Complaint</h2>
-    <input type="text" id="subject" placeholder="Subject" />
-    <textarea id="description" placeholder="Description..."></textarea>
-    <button onclick="createTicket()">Submit</button>
+    <h2>Welcome, <span id="username"></span></h2>
+    <textarea id="complaintText" placeholder="Enter your complaint..."></textarea>
+    <button onclick="submitComplaint()">Submit Complaint</button>
 
-    <h2>My Complaints</h2>
-    <div id="ticketList">Loading...</div>
+    <h3>Your Complaints:</h3>
+    <div id="ticketList"></div>
+
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
   <script>
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
+    const user = localStorage.getItem("loggedInUser");
+    if (!user) window.location.href = "index.html";
+    document.getElementById("username").innerText = user;
 
-    if (!token) {
-      alert('You are not logged in');
-      window.location.href = 'index.html';
+    const ticketList = JSON.parse(localStorage.getItem(`${user}_tickets`) || "[]");
+    const ticketContainer = document.getElementById("ticketList");
+
+    function renderTickets() {
+      ticketContainer.innerHTML = "";
+      ticketList.forEach((t, i) => {
+        ticketContainer.innerHTML += `<div class="ticket"><strong>Case #${i + 1}:</strong><br>${t}</div>`;
+      });
     }
 
-    async function createTicket() {
-      const subject = document.getElementById('subject').value;
-      const description = document.getElementById('description').value;
-
-      const res = await fetch('http://localhost:5000/api/tickets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        body: JSON.stringify({ subject, description })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert('Complaint submitted');
-        document.getElementById('subject').value = '';
-        document.getElementById('description').value = '';
-        loadTickets();
-      } else {
-        alert(data.message || 'Error submitting ticket');
-      }
-    }
-
-    async function loadTickets() {
-      const res = await fetch('http://localhost:5000/api/tickets', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-
-      const data = await res.json();
-      const ticketList = document.getElementById('ticketList');
-      ticketList.innerHTML = '';
-
-      if (data.length === 0) {
-        ticketList.innerHTML = '<p>No complaints yet.</p>';
-      } else {
-        data.forEach(ticket => {
-          const div = document.createElement('div');
-          div.className = 'ticket';
-          div.innerHTML = `<strong>${ticket.subject}</strong><br>${ticket.description}<br><small>Status: ${ticket.status}</small>`;
-          ticketList.appendChild(div);
-        });
+    function submitComplaint() {
+      const complaint = document.getElementById("complaintText").value;
+      if (complaint.trim()) {
+        ticketList.push(complaint);
+        localStorage.setItem(`${user}_tickets`, JSON.stringify(ticketList));
+        renderTickets();
+        document.getElementById("complaintText").value = "";
       }
     }
 
     function logout() {
-      localStorage.clear();
-      window.location.href = 'index.html';
+      localStorage.removeItem("loggedInUser");
+      window.location.href = "index.html";
     }
 
-    window.onload = loadTickets;
+    renderTickets();
   </script>
 </body>
 </html>
