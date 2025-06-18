@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard - Complaint Panel</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+    textarea, input, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #28a745; color: white; font-weight: bold; border: none; }
+    button:hover { background: #218838; cursor: pointer; }
+    .ticket { background: #fafafa; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 6px; }
+    .logout { background: #dc3545; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome, <span id="username"></span></h2>
+    <textarea id="complaintText" placeholder="Enter your complaint..."></textarea>
+    <button onclick="submitComplaint()">Submit Complaint</button>
+
+    <h3>Your Complaints:</h3>
+    <div id="ticketList"></div>
+
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    const user = localStorage.getItem("loggedInUser");
+    if (!user) window.location.href = "index.html";
+    document.getElementById("username").innerText = user;
+
+    const ticketList = JSON.parse(localStorage.getItem(`${user}_tickets`) || "[]");
+    const ticketContainer = document.getElementById("ticketList");
+
+    function renderTickets() {
+      ticketContainer.innerHTML = "";
+      ticketList.forEach((t, i) => {
+        ticketContainer.innerHTML += `<div class="ticket"><strong>Case #${i + 1}:</strong><br>${t}</div>`;
+      });
+    }
+
+    function submitComplaint() {
+      const complaint = document.getElementById("complaintText").value;
+      if (complaint.trim()) {
+        ticketList.push(complaint);
+        localStorage.setItem(`${user}_tickets`, JSON.stringify(ticketList));
+        renderTickets();
+        document.getElementById("complaintText").value = "";
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("loggedInUser");
+      window.location.href = "index.html";
+    }
+
+    renderTickets();
+  </script>
+</body>
+</html>
